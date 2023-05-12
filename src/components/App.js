@@ -31,18 +31,20 @@ function App() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    Promise.all([
-      api.getUserInfo(),
-      api.getCardInfo()
-    ])
-      .then(([userData, cardsData]) => {
-        setCurrentUser(userData);
-        setCards(cardsData);
-      })
-      .catch((err) => {
-        console.log(err);
-      })
-  }, []);
+    if (loggedIn) {
+      Promise.all([
+        api.getUserInfo(),
+        api.getCardInfo()
+      ])
+        .then(([userData, cardsData]) => {
+          setCurrentUser(userData);
+          setCards(cardsData);
+        })
+        .catch((err) => {
+          console.log(err);
+        })
+    }
+  }, [loggedIn]);
 
   useEffect(() => {
     tokenCheck();
@@ -148,16 +150,12 @@ function App() {
       })
       .catch((err) => {
         setIsSucsess(false);
+        handleInfoTooltip();
         console.log(err);
       })
       .finally(() => {
-        if (isSucsessRef.current === false) {
-          handleInfoTooltip();
-        } else {
-          apiAuth.checkJwt()
-            .then((data) => {
-              setLoginEmail(data.data.email);
-            })
+        if (isSucsessRef.current === true) {
+          setLoginEmail(inputData.email);
           navigate('/', { replace: true });
         }
       });
@@ -182,6 +180,11 @@ function App() {
     setIsInfoTooltip(!isInfoTooltip);
   }
 
+  function onSignOut() {
+    setLoginEmail('');
+    localStorage.removeItem('token');
+  }
+
   function closeAllPopups() {
     setIsEditAvatarPopupOpen(false);
     setIsEditProfilePopupOpen(false);
@@ -194,7 +197,7 @@ function App() {
     <div className="page__container">
       <CurrentUserContext.Provider value={currentUser}>
 
-        <Header loginEmail={loginEmail} />
+        <Header loginEmail={loginEmail} setLoginEmail={setLoginEmail} onSignOut={onSignOut} />
 
         <Routes>
           <Route path="*" element={loggedIn ? <Navigate to="/" replace /> : <Navigate to="/sign-in" replace />} />
